@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum TargetType {
+  POST
+  MESSAGE
+}
+
+enum ChannelRole {
+  OWNER
+  MODERATOR
+  MEMBER
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+
+  posts    Post[]
+  channels Channel[]    @relation("OwnedChannels")
+  messages Message[]
+
+  followers  Follow[] @relation("Following")
+  following  Follow[] @relation("Followers")
+  reactions  Reaction[]
+  memberships ChannelMember[]
+}
+
+model Follow {
+  followerId  String
+  follower    User     @relation("Followers", fields: [followerId], references: [id])
+
+  followingId String
+  following   User     @relation("Following", fields: [followingId], references: [id])
+
+  createdAt   DateTime @default(now())
+
+  @@id([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+model Post {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  parentId String?
+  parent   Post?   @relation("PostThread", fields: [parentId], references: [id])
+  replies  Post[]  @relation("PostThread")
+
+  @@index([authorId])
+  @@index([parentId])
+  @@index([createdAt])
+}
+
+model Reaction {
+  id         String     @id @default(uuid())
+  emoji      String
+  targetType TargetType
+  targetId   String
+  createdAt  DateTime   @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([userId, targetType, targetId, emoji])
+  @@index([targetType, targetId])
+}
+
+model Channel {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  ownerId String
+  owner   User   @relation("OwnedChannels", fields: [ownerId], references: [id])
+
+  messages Message[]
+  members  ChannelMember[]
+}
+
+model ChannelMember {
+  channelId String
+  channel   Channel     @relation(fields: [channelId], references: [id])
+
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+
+  role      ChannelRole @default(MEMBER)
+  joinedAt  DateTime    @default(now())
+
+  @@id([channelId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+
+  channelId String
+  channel   Channel @relation(fields: [channelId], references: [id])
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  @@index([channelId, createdAt])
+}
