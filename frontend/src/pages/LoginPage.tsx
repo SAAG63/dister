@@ -23,11 +23,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg p-4">
-      {/* Background glow */}
       <div className="fixed top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-accent/5 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="w-full max-w-md relative">
-        {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-10">
           <div className="w-12 h-12 rounded-xl bg-accent flex items-center justify-center">
             <Flame className="w-7 h-7 text-bg" />
@@ -37,7 +35,6 @@ export default function LoginPage() {
           </h1>
         </div>
 
-        {/* Card */}
         <div className="bg-surface border border-border rounded-2xl p-8">
           <h2 className="font-display font-bold text-xl text-text-primary mb-1">
             {isRegister ? 'Создать аккаунт' : 'Войти'}

@@ -35,13 +35,10 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Profile header */}
       <div className="border-b border-border">
-        {/* Banner */}
         <div className="h-32 bg-gradient-to-br from-accent/20 via-surface to-surface-elevated" />
 
         <div className="px-5 pb-5">
-          {/* Avatar + actions */}
           <div className="flex items-end justify-between -mt-10 mb-4">
             <div className="w-20 h-20 rounded-full bg-surface border-4 border-bg flex items-center justify-center text-2xl font-bold text-accent uppercase font-display">
               {user.username.charAt(0)}
@@ -68,7 +65,6 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* Info */}
           <h2 className="font-display font-bold text-xl text-text-primary">
             {user.username}
           </h2>
@@ -87,7 +83,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="flex border-t border-border">
           {tabs.map(({ key, label, count }) => (
             <button
@@ -108,7 +103,6 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Tab content */}
       <div>
         {activeTab === 'posts' &&
           userPosts.map((post) => <PostCard key={post.id} post={post} />)}

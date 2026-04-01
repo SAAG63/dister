@@ -36,7 +36,6 @@ export default function ChannelChatPage() {
 
   return (
     <div className="flex flex-col h-screen">
-      {/* Header */}
       <div className="shrink-0 border-b border-border bg-surface px-5 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link
@@ -79,10 +78,8 @@ export default function ChannelChatPage() {
         </div>
       </div>
 
-      {/* Messages */}
       <MessageList messages={msgs} />
 
-      {/* Input */}
       {joined && <MessageInput onSend={handleSend} />}
     </div>
   );

@@ -25,9 +25,7 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
       <aside className="w-64 shrink-0 border-r border-border bg-surface flex flex-col">
-        {/* Logo */}
         <div className="p-6 border-b border-border">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center">
@@ -39,7 +37,6 @@ export default function Layout() {
           </div>
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 p-4 space-y-1">
           {navItems.map(({ to, icon: Icon, label }) => (
             <NavLink
@@ -59,7 +56,6 @@ export default function Layout() {
           ))}
         </nav>
 
-        {/* User section */}
         <div className="p-4 border-t border-border">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-surface-elevated border border-border flex items-center justify-center text-sm font-semibold text-accent uppercase">
@@ -82,7 +78,6 @@ export default function Layout() {
         </div>
       </aside>
 
-      {/* Main content */}
       <main className="flex-1 overflow-y-auto">
         <Outlet />
       </main>

@@ -18,7 +18,6 @@ export default function ProfileEditPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Header */}
       <div className="sticky top-0 z-10 backdrop-blur-xl bg-bg/80 border-b border-border px-5 py-4 flex items-center gap-3">
         <Link
           to="/profile/me"
@@ -32,7 +31,6 @@ export default function ProfileEditPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="p-5 space-y-6">
-        {/* Avatar upload */}
         <div className="flex items-center gap-5">
           <div className="w-20 h-20 rounded-full bg-surface-elevated border border-border flex items-center justify-center text-2xl font-bold text-accent uppercase font-display">
             {username.charAt(0) || '?'}
@@ -46,7 +44,6 @@ export default function ProfileEditPage() {
           </button>
         </div>
 
-        {/* Fields */}
         <div>
           <label className="block text-xs font-medium text-text-secondary mb-1.5">
             Имя пользователя

@@ -23,7 +23,6 @@ export default function PostCard({ post, compact }: PostCardProps) {
   return (
     <article className="group p-5 border-b border-border hover:bg-surface-elevated/50 transition-colors duration-150">
       <div className="flex gap-3">
-        {/* Avatar */}
         <Link to={`/profile/${post.author.id}`} className="shrink-0">
           <div className="w-10 h-10 rounded-full bg-surface-elevated border border-border flex items-center justify-center text-sm font-semibold text-accent uppercase">
             {post.author.username.charAt(0)}
@@ -31,7 +30,6 @@ export default function PostCard({ post, compact }: PostCardProps) {
         </Link>
 
         <div className="flex-1 min-w-0">
-          {/* Header */}
           <div className="flex items-center gap-2 mb-1">
             <Link
               to={`/profile/${post.author.id}`}
@@ -43,14 +41,12 @@ export default function PostCard({ post, compact }: PostCardProps) {
             <span className="text-text-muted text-xs">{timeAgo(post.createdAt)}</span>
           </div>
 
-          {/* Content */}
           <Link to={`/post/${post.id}`} className="block">
             <p className="text-text-primary text-[15px] leading-relaxed whitespace-pre-wrap break-words">
               {post.content}
             </p>
           </Link>
 
-          {/* Actions */}
           {!compact && (
             <div className="flex items-center gap-4 mt-3">
               <ReactionBar reactions={post.reactions} />

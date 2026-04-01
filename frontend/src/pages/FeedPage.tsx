@@ -25,7 +25,6 @@ export default function FeedPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Header */}
       <div className="sticky top-0 z-10 backdrop-blur-xl bg-bg/80 border-b border-border px-5 py-4">
         <h1 className="font-display font-bold text-lg text-text-primary">Лента</h1>
       </div>

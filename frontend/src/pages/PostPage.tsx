@@ -40,7 +40,6 @@ export default function PostPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Header */}
       <div className="sticky top-0 z-10 backdrop-blur-xl bg-bg/80 border-b border-border px-5 py-4 flex items-center gap-3">
         <Link
           to="/feed"
@@ -51,17 +50,14 @@ export default function PostPage() {
         <h1 className="font-display font-bold text-lg text-text-primary">Пост</h1>
       </div>
 
-      {/* Original post */}
       <PostCard post={post} />
 
-      {/* Reply form */}
       <PostForm
         onSubmit={handleReply}
         placeholder="Написать ответ..."
         buttonText="Ответить"
       />
 
-      {/* Thread */}
       {replies.length > 0 && (
         <div className="border-l-2 border-border ml-8">
           {replies.map((reply) => (
