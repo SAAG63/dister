@@ -33,14 +33,26 @@ model User {
   following  Follow[] @relation("Followers")
   reactions  Reaction[]
   memberships ChannelMember[]
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Follow {
   followerId  String
-  follower    User     @relation("Followers", fields: [followerId], references: [id])
+  follower    User     @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
 
   followingId String
-  following   User     @relation("Following", fields: [followingId], references: [id])
+  following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
 
   createdAt   DateTime @default(now())
 
@@ -55,11 +67,14 @@ model Post {
   createdAt DateTime @default(now())
 
   authorId String
-  author   User   @relation(fields: [authorId], references: [id])
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   parentId String?
-  parent   Post?   @relation("PostThread", fields: [parentId], references: [id])
+  parent   Post?   @relation("PostThread", fields: [parentId], references: [id], onDelete: Cascade)
   replies  Post[]  @relation("PostThread")
+
+  reactionCounts Json @default("{}")
+  replyCount     Int  @default(0)
 
   @@index([authorId])
   @@index([parentId])
@@ -74,7 +89,7 @@ model Reaction {
   createdAt  DateTime   @default(now())
 
   userId String
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, targetType, targetId, emoji])
   @@index([targetType, targetId])
@@ -88,7 +103,9 @@ model Channel {
   createdAt   DateTime @default(now())
 
   ownerId String
-  owner   User   @relation("OwnedChannels", fields: [ownerId], references: [id])
+  owner   User   @relation("OwnedChannels", fields: [ownerId], references: [id], onDelete: Restrict)
+
+  memberCount Int @default(0)
 
   messages Message[]
   members  ChannelMember[]
@@ -96,10 +113,10 @@ model Channel {
 
 model ChannelMember {
   channelId String
-  channel   Channel     @relation(fields: [channelId], references: [id])
+  channel   Channel     @relation(fields: [channelId], references: [id], onDelete: Cascade)
 
   userId    String
-  user      User        @relation(fields: [userId], references: [id])
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   role      ChannelRole @default(MEMBER)
   joinedAt  DateTime    @default(now())
@@ -114,10 +131,12 @@ model Message {
   createdAt DateTime @default(now())
 
   channelId String
-  channel   Channel @relation(fields: [channelId], references: [id])
+  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
 
   authorId String
-  author   User   @relation(fields: [authorId], references: [id])
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  reactionCounts Json @default("{}")
 
   @@index([channelId, createdAt])
 }

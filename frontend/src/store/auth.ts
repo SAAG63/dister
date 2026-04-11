@@ -1,47 +1,53 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { User } from '../mocks/data';
-import { currentUser } from '../mocks/data';
+import { loginRequest, registerRequest, logoutRequest } from '../api/auth';
+
+export interface User {
+  id: string;
+  username: string;
+  email?: string;
+  avatarUrl: string | null;
+  createdAt: string;
+}
 
 interface AuthState {
   token: string | null;
+  refreshToken: string | null;
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => void;
-  register: (username: string, email: string, password: string) => void;
+  login: (email: string, password: string) => Promise<void>;
+  register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => void;
+  setTokens: (token: string, refreshToken: string) => void;
   updateUser: (data: Partial<User>) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       token: null,
+      refreshToken: null,
       user: null,
       isAuthenticated: false,
 
-      login: (_email: string, _password: string) => {
-        set({
-          token: 'mock-jwt-token',
-          user: currentUser,
-          isAuthenticated: true,
-        });
+      login: async (email: string, password: string) => {
+        const { token, refreshToken, user } = await loginRequest(email, password);
+        set({ token, refreshToken, user, isAuthenticated: true });
       },
 
-      register: (_username: string, _email: string, _password: string) => {
-        set({
-          token: 'mock-jwt-token',
-          user: currentUser,
-          isAuthenticated: true,
-        });
+      register: async (username: string, email: string, password: string) => {
+        const { token, refreshToken, user } = await registerRequest(username, email, password);
+        set({ token, refreshToken, user, isAuthenticated: true });
       },
 
       logout: () => {
-        set({
-          token: null,
-          user: null,
-          isAuthenticated: false,
-        });
+        const rt = get().refreshToken;
+        if (rt) logoutRequest(rt).catch(() => {});
+        set({ token: null, refreshToken: null, user: null, isAuthenticated: false });
+      },
+
+      setTokens: (token: string, refreshToken: string) => {
+        set({ token, refreshToken });
       },
 
       updateUser: (data) => {
@@ -54,6 +60,7 @@ export const useAuthStore = create<AuthState>()(
       name: 'socialhub-auth',
       partialize: (state) => ({
         token: state.token,
+        refreshToken: state.refreshToken,
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),

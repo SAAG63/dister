@@ -1,4 +1,5 @@
 import { Test } from '@nestjs/testing';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { FeedService } from './feed.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -6,7 +7,13 @@ describe('FeedService', () => {
   let service: FeedService;
   let prisma: any;
 
+  const mockCache = { get: jest.fn(), set: jest.fn(), del: jest.fn() };
+
   beforeEach(async () => {
+    mockCache.get.mockReset();
+    mockCache.set.mockReset();
+    mockCache.del.mockReset();
+
     prisma = {
       follow: { findMany: jest.fn() },
       post: { findMany: jest.fn() },
@@ -16,6 +23,7 @@ describe('FeedService', () => {
       providers: [
         FeedService,
         { provide: PrismaService, useValue: prisma },
+        { provide: CACHE_MANAGER, useValue: mockCache },
       ],
     }).compile();
 

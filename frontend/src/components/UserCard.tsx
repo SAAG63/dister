@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { UserPlus, UserMinus } from 'lucide-react';
-import type { User } from '../mocks/data';
+import type { User } from '../types';
+import { followUser, unfollowUser } from '../api/users';
+import { useAuthStore } from '../store/auth';
 
 interface UserCardProps {
   user: User;
@@ -11,30 +13,52 @@ interface UserCardProps {
 
 export default function UserCard({ user, isFollowing: initialFollow = false, showFollow = true }: UserCardProps) {
   const [isFollowing, setIsFollowing] = useState(initialFollow);
+  const [loading, setLoading] = useState(false);
+  const currentUser = useAuthStore((s) => s.user);
+
+  const isMe = currentUser?.id === user.id;
+
+  const handleToggle = async () => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      if (isFollowing) {
+        await unfollowUser(user.id);
+        setIsFollowing(false);
+      } else {
+        await followUser(user.id);
+        setIsFollowing(true);
+      }
+    } catch {
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-elevated/50 transition-colors">
+    <div className="flex items-center gap-3 p-3 border-b-2 border-border-light hover:bg-surface-elevated/50 transition-colors">
       <Link to={`/profile/${user.id}`} className="shrink-0">
-        <div className="w-10 h-10 rounded-full bg-surface-elevated border border-border flex items-center justify-center text-sm font-semibold text-accent uppercase">
+        <div className="w-10 h-10 rounded-full bg-accent border-2 border-border flex items-center justify-center text-sm font-bold text-border uppercase">
           {user.username.charAt(0)}
         </div>
       </Link>
       <div className="flex-1 min-w-0">
         <Link
           to={`/profile/${user.id}`}
-          className="text-sm font-semibold text-text-primary hover:text-accent transition-colors"
+          className="text-sm font-bold text-text-primary hover:text-secondary transition-colors"
         >
           {user.username}
         </Link>
       </div>
-      {showFollow && (
+      {showFollow && !isMe && (
         <button
-          onClick={() => setIsFollowing(!isFollowing)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+          onClick={handleToggle}
+          disabled={loading}
+          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition-all border-2 border-border ${
             isFollowing
-              ? 'border-border text-text-secondary hover:border-danger hover:text-danger'
-              : 'border-accent bg-accent-subtle text-accent hover:bg-accent hover:text-bg'
-          }`}
+              ? 'bg-surface text-text-secondary hover:bg-danger hover:text-white'
+              : 'bg-accent shadow-[2px_2px_0_0] shadow-border hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]'
+          } ${loading ? 'opacity-50' : ''}`}
         >
           {isFollowing ? (
             <>

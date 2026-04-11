@@ -3,6 +3,7 @@ import {
   Flame,
   Hash,
   User,
+  Users,
   LogOut,
   Rss,
 } from 'lucide-react';
@@ -11,6 +12,7 @@ import { useAuthStore } from '../store/auth';
 const navItems = [
   { to: '/feed', icon: Rss, label: 'Лента' },
   { to: '/channels', icon: Hash, label: 'Каналы' },
+  { to: '/users', icon: Users, label: 'Пользователи' },
   { to: '/profile/me', icon: User, label: 'Профиль' },
 ];
 
@@ -24,63 +26,59 @@ export default function Layout() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <aside className="w-64 shrink-0 border-r border-border bg-surface flex flex-col">
-        <div className="p-6 border-b border-border">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center">
-              <Flame className="w-5 h-5 text-bg" />
-            </div>
-            <span className="font-display font-bold text-xl tracking-tight text-text-primary">
-              SocialHub
-            </span>
+    <div className="flex flex-col h-screen overflow-hidden">
+      <header className="shrink-0 bg-accent border-b-3 border-border flex items-center justify-between px-5 py-3">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-border border-3 border-border shadow-[3px_3px_0_0] shadow-secondary flex items-center justify-center">
+            <Flame className="w-5 h-5 text-accent" />
           </div>
+          <span className="font-display font-extrabold text-xl tracking-tight text-border">
+            SocialHub
+          </span>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-semibold text-border">{user?.username ?? 'Guest'}</span>
+          <div className="w-8 h-8 bg-surface border-2 border-border rounded-full flex items-center justify-center text-sm font-bold text-border uppercase">
+            {user?.username?.charAt(0) ?? '?'}
+          </div>
+        </div>
+      </header>
+
+      <div className="flex flex-1 overflow-hidden">
+        <aside className="w-16 shrink-0 border-r-3 border-border bg-surface flex flex-col items-center py-4 gap-2">
           {navItems.map(({ to, icon: Icon, label }) => (
             <NavLink
               key={to}
               to={to}
+              title={label}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-150 ${
+                `w-11 h-11 flex items-center justify-center border-2 border-border transition-all ${
                   isActive
-                    ? 'bg-accent-subtle text-accent'
-                    : 'text-text-secondary hover:text-text-primary hover:bg-surface-elevated'
+                    ? 'bg-secondary text-white shadow-[3px_3px_0_0] shadow-border'
+                    : 'bg-surface text-text-secondary hover:bg-surface-elevated hover:shadow-[2px_2px_0_0] hover:shadow-border'
                 }`
               }
             >
               <Icon className="w-5 h-5" />
-              {label}
             </NavLink>
           ))}
-        </nav>
 
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-surface-elevated border border-border flex items-center justify-center text-sm font-semibold text-accent uppercase">
-              {user?.username?.charAt(0) ?? '?'}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-text-primary truncate">
-                {user?.username ?? 'Guest'}
-              </p>
-              <p className="text-xs text-text-muted truncate">{user?.email}</p>
-            </div>
+          <div className="mt-auto">
             <button
               onClick={handleLogout}
-              className="p-2 rounded-lg text-text-muted hover:text-danger hover:bg-surface-elevated transition-colors"
+              className="w-11 h-11 flex items-center justify-center border-2 border-border bg-surface text-text-muted hover:text-danger hover:bg-surface-elevated transition-colors"
               title="Выйти"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-5 h-5" />
             </button>
           </div>
-        </div>
-      </aside>
+        </aside>
 
-      <main className="flex-1 overflow-y-auto">
-        <Outlet />
-      </main>
+        <main className="flex-1 overflow-y-auto">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

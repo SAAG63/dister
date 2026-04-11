@@ -52,6 +52,8 @@ async function main() {
     data: {
       content: 'Hello SocialHub! This is my first post.',
       authorId: alice.id,
+      reactionCounts: { '👍': 1, '❤️': 1 },
+      replyCount: 1,
     },
   });
 
@@ -59,6 +61,8 @@ async function main() {
     data: {
       content: 'Welcome to the platform!',
       authorId: bob.id,
+      reactionCounts: { '🎉': 1 },
+      replyCount: 1,
     },
   });
 
@@ -92,6 +96,7 @@ async function main() {
       description: 'General discussion channel',
       isPublic: true,
       ownerId: alice.id,
+      memberCount: 3,
     },
   });
 
@@ -99,8 +104,9 @@ async function main() {
     data: {
       name: 'dev',
       description: 'Developer talk',
-      isPublic: true,
+      isPublic: false,
       ownerId: bob.id,
+      memberCount: 2,
     },
   });
 
@@ -119,6 +125,7 @@ async function main() {
       content: 'Welcome to #general!',
       channelId: general.id,
       authorId: alice.id,
+      reactionCounts: { '👋': 2 },
     },
   });
 
@@ -153,7 +160,7 @@ async function main() {
     ],
   });
 
-  console.log('Seed completed successfully!');
+  console.log('Seed done');
 }
 
 main()

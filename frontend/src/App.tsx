@@ -8,6 +8,7 @@ import ProfilePage from './pages/ProfilePage';
 import ProfileEditPage from './pages/ProfileEditPage';
 import ChannelsPage from './pages/ChannelsPage';
 import ChannelChatPage from './pages/ChannelChatPage';
+import UsersPage from './pages/UsersPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="/post/:id" element={<PostPage />} />
           <Route path="/profile/edit" element={<ProfileEditPage />} />
           <Route path="/profile/:id" element={<ProfilePage />} />
+          <Route path="/users" element={<UsersPage />} />
           <Route path="/channels" element={<ChannelsPage />} />
           <Route path="/channels/:id" element={<ChannelChatPage />} />
         </Route>

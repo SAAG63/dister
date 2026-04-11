@@ -1,20 +1,20 @@
-import { currentUser } from '../mocks/data';
+import client from './client';
 
-export async function loginRequest(_email: string, _password: string) {
-  await delay();
-  return { token: 'mock-jwt-token', user: currentUser };
+export async function loginRequest(email: string, password: string) {
+  const { data } = await client.post('/auth/login', { email, password });
+  return data;
 }
 
-export async function registerRequest(_username: string, _email: string, _password: string) {
-  await delay();
-  return { token: 'mock-jwt-token', user: currentUser };
+export async function registerRequest(username: string, email: string, password: string) {
+  const { data } = await client.post('/auth/register', { username, email, password });
+  return data;
 }
 
-export async function refreshRequest(_refreshToken: string) {
-  await delay();
-  return { token: 'mock-jwt-token-refreshed' };
+export async function refreshRequest(refreshToken: string) {
+  const { data } = await client.post('/auth/refresh', { refreshToken });
+  return data;
 }
 
-function delay(ms = 300) {
-  return new Promise((r) => setTimeout(r, ms));
+export async function logoutRequest(refreshToken: string) {
+  await client.post('/auth/logout', { refreshToken });
 }

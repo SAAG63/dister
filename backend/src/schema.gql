@@ -1,0 +1,119 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type ChannelMemberType {
+  joinedAt: DateTime!
+  role: String!
+  user: UserType!
+}
+
+type ChannelType {
+  createdAt: DateTime!
+  description: String
+  id: ID!
+  isPublic: Boolean!
+  memberCount: Int!
+  members(cursor: String, limit: Int! = 20): PaginatedChannelMembers!
+  name: String!
+  owner: UserType!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type MessageType {
+  author: UserType!
+  channelId: ID!
+  content: String!
+  createdAt: DateTime!
+  id: ID!
+  reactions: [ReactionType!]!
+}
+
+type Mutation {
+  addMessageReaction(emoji: String!, messageId: ID!): Boolean!
+  addPostReaction(emoji: String!, postId: ID!): Boolean!
+  createChannel(description: String, isPublic: Boolean! = true, name: String!): ChannelType!
+  createPost(content: String!, parentId: ID): PostType!
+  deleteMessage(id: ID!): Boolean!
+  deletePost(id: ID!): Boolean!
+  follow(userId: ID!): Boolean!
+  joinChannel(channelId: ID!): Boolean!
+  leaveChannel(channelId: ID!): Boolean!
+  removeMessageReaction(emoji: String!, messageId: ID!): Boolean!
+  removePostReaction(emoji: String!, postId: ID!): Boolean!
+  sendMessage(channelId: ID!, content: String!): MessageType!
+  unfollow(userId: ID!): Boolean!
+  updateChannel(description: String, id: ID!, name: String): ChannelType!
+  updateUser(avatarUrl: String, email: String, username: String): UserType!
+}
+
+type PaginatedChannelMembers {
+  data: [ChannelMemberType!]!
+  hasMore: Boolean!
+  nextCursor: String
+}
+
+type PaginatedChannels {
+  data: [ChannelType!]!
+  hasMore: Boolean!
+  nextCursor: String
+}
+
+type PaginatedMessages {
+  data: [MessageType!]!
+  hasMore: Boolean!
+  nextCursor: String
+}
+
+type PaginatedPosts {
+  data: [PostType!]!
+  hasMore: Boolean!
+  nextCursor: String
+}
+
+type PaginatedUsers {
+  data: [UserType!]!
+  hasMore: Boolean!
+  nextCursor: String
+}
+
+type PostType {
+  author: UserType!
+  content: String!
+  createdAt: DateTime!
+  id: ID!
+  parentId: ID
+  reactions: [ReactionType!]!
+  replies(cursor: String, limit: Int! = 10): PaginatedPosts!
+  replyCount: Int!
+}
+
+type Query {
+  channel(id: ID!): ChannelType!
+  channels(cursor: String, limit: Int! = 20): PaginatedChannels!
+  feed(cursor: String, limit: Int! = 20): PaginatedPosts!
+  messages(channelId: ID!, cursor: String, limit: Int! = 20): PaginatedMessages!
+  post(id: ID!): PostType!
+  user(id: ID!): UserType!
+  users(cursor: String, limit: Int! = 20): PaginatedUsers!
+}
+
+type ReactionType {
+  count: Int!
+  emoji: String!
+  reacted: Boolean!
+}
+
+type UserType {
+  avatarUrl: String
+  createdAt: DateTime!
+  followers(cursor: String, limit: Int! = 10): PaginatedUsers!
+  following(cursor: String, limit: Int! = 10): PaginatedUsers!
+  id: ID!
+  posts(cursor: String, limit: Int! = 10): PaginatedPosts!
+  username: String!
+}

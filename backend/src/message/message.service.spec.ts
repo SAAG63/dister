@@ -13,7 +13,8 @@ describe('MessageService', () => {
     channelId: 'ch-1',
     authorId: 'user-1',
     createdAt: new Date(),
-    author: { id: 'user-1', username: 'alice' },
+    reactionCounts: {},
+    author: { id: 'user-1', username: 'alice', email: 'alice@test.com', avatarUrl: null, createdAt: new Date() },
   };
 
   beforeEach(async () => {
@@ -28,9 +29,16 @@ describe('MessageService', () => {
       },
       reaction: {
         findUnique: jest.fn(),
+        findMany: jest.fn(),
         create: jest.fn(),
         delete: jest.fn(),
+        deleteMany: jest.fn(),
       },
+      $transaction: jest.fn((args) => {
+        if (Array.isArray(args)) return Promise.all(args);
+        return args(prisma);
+      }),
+      $queryRaw: jest.fn(),
     };
 
     const module = await Test.createTestingModule({
@@ -60,27 +68,21 @@ describe('MessageService', () => {
 
   describe('getByChannel', () => {
     it('should return paginated messages', async () => {
-      prisma.channel.findUnique.mockResolvedValue({ id: 'ch-1' });
       prisma.message.findMany.mockResolvedValue([mockMessage]);
 
       const result = await service.getByChannel('ch-1');
       expect(result.data).toHaveLength(1);
       expect(result.hasMore).toBe(false);
     });
-
-    it('should throw NotFoundException for invalid channel', async () => {
-      prisma.channel.findUnique.mockResolvedValue(null);
-      await expect(service.getByChannel('bad-id')).rejects.toThrow(NotFoundException);
-    });
   });
 
   describe('delete', () => {
-    it('should delete own message', async () => {
+    it('should delete own message in transaction', async () => {
       prisma.message.findUnique.mockResolvedValue(mockMessage);
-      prisma.message.delete.mockResolvedValue(mockMessage);
+      prisma.$transaction.mockResolvedValue([]);
 
       await service.delete('msg-1', 'user-1');
-      expect(prisma.message.delete).toHaveBeenCalled();
+      expect(prisma.$transaction).toHaveBeenCalled();
     });
 
     it('should throw ForbiddenException for other user', async () => {
@@ -95,35 +97,78 @@ describe('MessageService', () => {
   });
 
   describe('addReaction', () => {
-    it('should add reaction to message', async () => {
-      prisma.message.findUnique.mockResolvedValue(mockMessage);
-      prisma.reaction.findUnique.mockResolvedValue(null);
-      prisma.reaction.create.mockResolvedValue({ emoji: '👍' });
+    const memberMsg = { channelId: 'ch-1', channel: { members: [{ role: 'MEMBER' }] } };
+    const noMemberMsg = { channelId: 'ch-1', channel: { members: [] } };
+
+    it('should add reaction in transaction', async () => {
+      prisma.message.findUnique.mockResolvedValue(memberMsg);
+      const reaction = { id: 'r-1', emoji: '👍', targetType: 'MESSAGE', targetId: 'msg-1', userId: 'user-1' };
+      prisma.$transaction.mockResolvedValue([reaction, undefined]);
 
       const result = await service.addReaction('msg-1', 'user-1', '👍');
       expect(result.emoji).toBe('👍');
     });
 
-    it('should throw ConflictException for duplicate', async () => {
-      prisma.message.findUnique.mockResolvedValue(mockMessage);
-      prisma.reaction.findUnique.mockResolvedValue({ id: 'r-1' });
+    it('should throw ForbiddenException when not a member', async () => {
+      prisma.message.findUnique.mockResolvedValue(noMemberMsg);
+      await expect(service.addReaction('msg-1', 'user-99', '👍')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw ConflictException for duplicate (P2002)', async () => {
+      prisma.message.findUnique.mockResolvedValue(memberMsg);
+      const error: any = new Error('Unique constraint');
+      error.code = 'P2002';
+      prisma.$transaction.mockRejectedValue(error);
 
       await expect(service.addReaction('msg-1', 'user-1', '👍')).rejects.toThrow(ConflictException);
+    });
+
+    it('should throw NotFoundException for non-existent message', async () => {
+      prisma.message.findUnique.mockResolvedValue(null);
+      await expect(service.addReaction('bad-id', 'user-1', '👍')).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('removeReaction', () => {
-    it('should remove reaction', async () => {
-      prisma.reaction.findUnique.mockResolvedValue({ id: 'r-1' });
-      prisma.reaction.delete.mockResolvedValue({});
+    const memberMsg = { channelId: 'ch-1', channel: { members: [{ role: 'MEMBER' }] } };
+    const noMemberMsg = { channelId: 'ch-1', channel: { members: [] } };
+
+    it('should remove reaction in transaction', async () => {
+      prisma.message.findUnique.mockResolvedValue(memberMsg);
+      prisma.reaction.findUnique.mockResolvedValue({ id: 'r-1', emoji: '👍' });
+      prisma.$transaction.mockResolvedValue([]);
 
       await service.removeReaction('msg-1', 'user-1', '👍');
-      expect(prisma.reaction.delete).toHaveBeenCalled();
+      expect(prisma.$transaction).toHaveBeenCalled();
     });
 
-    it('should throw NotFoundException when not found', async () => {
+    it('should throw ForbiddenException when not a member', async () => {
+      prisma.message.findUnique.mockResolvedValue(noMemberMsg);
+      await expect(service.removeReaction('msg-1', 'user-99', '👍')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw NotFoundException when reaction not found', async () => {
+      prisma.message.findUnique.mockResolvedValue(memberMsg);
       prisma.reaction.findUnique.mockResolvedValue(null);
       await expect(service.removeReaction('msg-1', 'user-1', '👍')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getMyReactions', () => {
+    it('should return empty array for empty messageIds', async () => {
+      const result = await service.getMyReactions('user-1', []);
+      expect(result).toEqual([]);
+    });
+
+    it('should return reactions for given messageIds', async () => {
+      const reactions = [
+        { targetId: 'msg-1', emoji: '👍' },
+        { targetId: 'msg-2', emoji: '❤️' },
+      ];
+      prisma.reaction.findMany.mockResolvedValue(reactions);
+
+      const result = await service.getMyReactions('user-1', ['msg-1', 'msg-2']);
+      expect(result).toHaveLength(2);
     });
   });
 });

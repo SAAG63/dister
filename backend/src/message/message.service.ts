@@ -4,9 +4,10 @@ import {
   ForbiddenException,
   ConflictException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaginatedResult } from '../common/types/paginated-result';
-import { Message } from '@prisma/client';
+import { USER_SELECT } from '../common/constants/user-select';
 
 @Injectable()
 export class MessageService {
@@ -20,17 +21,30 @@ export class MessageService {
 
     return this.prisma.message.create({
       data: { channelId, authorId, content },
-      include: { author: true },
+      select: {
+        id: true,
+        content: true,
+        createdAt: true,
+        channelId: true,
+        authorId: true,
+        reactionCounts: true,
+        author: { select: USER_SELECT },
+      },
     });
   }
 
-  async getByChannel(channelId: string, cursor?: string, limit = 20): Promise<PaginatedResult<Message>> {
-    const channel = await this.prisma.channel.findUnique({ where: { id: channelId } });
-    if (!channel) throw new NotFoundException('Channel not found');
-
+  async getByChannel(channelId: string, cursor?: string, limit = 20): Promise<PaginatedResult<any>> {
     const messages = await this.prisma.message.findMany({
       where: { channelId },
-      include: { author: true },
+      select: {
+        id: true,
+        content: true,
+        createdAt: true,
+        channelId: true,
+        authorId: true,
+        reactionCounts: true,
+        author: { select: USER_SELECT },
+      },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
       ...(cursor && { cursor: { id: cursor }, skip: 1 }),
@@ -49,30 +63,68 @@ export class MessageService {
   async delete(messageId: string, userId: string) {
     const message = await this.prisma.message.findUnique({ where: { id: messageId } });
     if (!message) throw new NotFoundException('Message not found');
-    if (message.authorId !== userId) throw new ForbiddenException('Not your message');
 
-    return this.prisma.message.delete({ where: { id: messageId } });
+    if (message.authorId !== userId) {
+      const member = await this.prisma.channelMember.findUnique({
+        where: { channelId_userId: { channelId: message.channelId, userId } },
+      });
+      if (!member || (member.role !== 'OWNER' && member.role !== 'MODERATOR')) {
+        throw new ForbiddenException('Not your message');
+      }
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.reaction.deleteMany({
+        where: { targetType: 'MESSAGE', targetId: messageId },
+      }),
+      this.prisma.message.delete({ where: { id: messageId } }),
+    ]);
   }
 
-  async addReaction(messageId: string, userId: string, emoji: string) {
-    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
-    if (!message) throw new NotFoundException('Message not found');
-
-    const existing = await this.prisma.reaction.findUnique({
-      where: {
-        userId_targetType_targetId_emoji: {
-          userId, targetType: 'MESSAGE', targetId: messageId, emoji,
+  private async verifyMembership(messageId: string, userId: string) {
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      select: {
+        channelId: true,
+        channel: {
+          select: { members: { where: { userId }, select: { role: true } } },
         },
       },
     });
-    if (existing) throw new ConflictException('Reaction already exists');
+    if (!message) throw new NotFoundException('Message not found');
+    if (message.channel.members.length === 0) throw new ForbiddenException('Not a channel member');
+    return message;
+  }
 
-    return this.prisma.reaction.create({
-      data: { userId, targetType: 'MESSAGE', targetId: messageId, emoji },
-    });
+  async addReaction(messageId: string, userId: string, emoji: string) {
+    await this.verifyMembership(messageId, userId);
+
+    try {
+      const [reaction] = await this.prisma.$transaction([
+        this.prisma.reaction.create({
+          data: { userId, targetType: 'MESSAGE', targetId: messageId, emoji },
+        }),
+        this.prisma.$queryRaw(Prisma.sql`
+          UPDATE "Message"
+          SET "reactionCounts" = jsonb_set(
+            COALESCE("reactionCounts", '{}')::jsonb,
+            ARRAY[${emoji}]::text[],
+            (COALESCE(("reactionCounts"->>CAST(${emoji} AS text))::int, 0) + 1)::text::jsonb
+          )
+          WHERE id = ${messageId}
+        `),
+      ]);
+      return reaction;
+    } catch (e: any) {
+      if (e.code === 'P2002') throw new ConflictException('Reaction already exists');
+      if (e.code === 'P2003') throw new NotFoundException('Message not found');
+      throw e;
+    }
   }
 
   async removeReaction(messageId: string, userId: string, emoji: string) {
+    await this.verifyMembership(messageId, userId);
+
     const existing = await this.prisma.reaction.findUnique({
       where: {
         userId_targetType_targetId_emoji: {
@@ -82,6 +134,29 @@ export class MessageService {
     });
     if (!existing) throw new NotFoundException('Reaction not found');
 
-    return this.prisma.reaction.delete({ where: { id: existing.id } });
+    await this.prisma.$transaction([
+      this.prisma.reaction.delete({ where: { id: existing.id } }),
+      this.prisma.$queryRaw(Prisma.sql`
+        UPDATE "Message"
+        SET "reactionCounts" = jsonb_set(
+          COALESCE("reactionCounts", '{}')::jsonb,
+          ARRAY[${emoji}]::text[],
+          (GREATEST(COALESCE(("reactionCounts"->>CAST(${emoji} AS text))::int, 0) - 1, 0))::text::jsonb
+        )
+        WHERE id = ${messageId}
+      `),
+    ]);
+  }
+
+  async getMyReactions(userId: string, messageIds: string[]) {
+    if (messageIds.length === 0) return [];
+    return this.prisma.reaction.findMany({
+      where: {
+        userId,
+        targetType: 'MESSAGE',
+        targetId: { in: messageIds },
+      },
+      select: { targetId: true, emoji: true },
+    });
   }
 }
