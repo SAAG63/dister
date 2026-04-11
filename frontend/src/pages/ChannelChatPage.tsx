@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Hash, Users, LogOut, X, Settings, ChevronUp, UserPlus } from 'lucide-react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Hash, Users, LogOut, X, Settings, ChevronUp, UserPlus, Trash2 } from 'lucide-react';
 import MessageList from '../components/MessageList';
 import MessageInput from '../components/MessageInput';
 import { useAuthStore } from '../store/auth';
-import { getChannel, joinChannel, leaveChannel, getMembers, updateChannel, setMemberRole, kickMember, inviteMember } from '../api/channels';
+import { getChannel, joinChannel, leaveChannel, getMembers, updateChannel, setMemberRole, kickMember, inviteMember, deleteChannel } from '../api/channels';
 import { getAllUsers } from '../api/users';
 import { getMessages, sendMessage } from '../api/messages';
 
@@ -43,6 +43,7 @@ interface Member {
 
 export default function ChannelChatPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const [channel, setChannel] = useState<Channel | null>(null);
   const [msgs, setMsgs] = useState<Message[]>([]);
@@ -57,17 +58,24 @@ export default function ChannelChatPage() {
   const [showInvite, setShowInvite] = useState(false);
   const [inviteSearch, setInviteSearch] = useState('');
   const [inviteResults, setInviteResults] = useState<{ id: string; username: string }[]>([]);
+  const inviteDebounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     if (!id) return;
-    Promise.all([getChannel(id), getMessages(id)])
-      .then(([ch, msgsRes]) => {
+    const load = async () => {
+      try {
+        const ch = await getChannel(id);
         setChannel(ch);
-        setMsgs(msgsRes.data.reverse());
-        setMsgCursor(msgsRes.nextCursor);
-        setHasMoreMsgs(msgsRes.hasMore);
-      })
-      .finally(() => setLoading(false));
+        try {
+          const msgsRes = await getMessages(id);
+          setMsgs(msgsRes.data.reverse());
+          setMsgCursor(msgsRes.nextCursor);
+          setHasMoreMsgs(msgsRes.hasMore);
+        } catch {}
+      } catch {}
+      setLoading(false);
+    };
+    load();
   }, [id]);
 
   const handleLoadOlder = async () => {
@@ -133,6 +141,12 @@ export default function ChannelChatPage() {
     setShowEdit(false);
   };
 
+  const handleDelete = async () => {
+    if (!id || !confirm('Удалить канал? Это действие необратимо.')) return;
+    await deleteChannel(id);
+    navigate('/channels');
+  };
+
   const openEdit = () => {
     setEditName(channel.name);
     setEditDesc(channel.description || '');
@@ -154,8 +168,6 @@ export default function ChannelChatPage() {
     setMembers(refreshed.data);
     setChannel({ ...channel, memberCount: channel.memberCount - 1 });
   };
-
-  const inviteDebounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const handleInviteSearch = (query: string) => {
     setInviteSearch(query);
@@ -215,6 +227,14 @@ export default function ChannelChatPage() {
               className="flex items-center gap-1 text-xs font-semibold text-text-muted border-2 border-border px-2 py-1 bg-surface-elevated hover:bg-accent transition-colors"
             >
               <Settings className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {isOwner && (
+            <button
+              onClick={handleDelete}
+              className="flex items-center gap-1 text-xs font-semibold text-danger border-2 border-border px-2 py-1 bg-surface-elevated hover:bg-danger hover:text-white transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
             </button>
           )}
           <button

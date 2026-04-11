@@ -15,6 +15,10 @@ export async function createChannel(name: string, description: string, isPublic 
   return data;
 }
 
+export async function deleteChannel(id: string) {
+  await client.delete(`/channels/${id}`);
+}
+
 export async function joinChannel(id: string) {
   await client.post(`/channels/${id}/join`);
 }

@@ -62,6 +62,14 @@ export class ChannelController {
     return this.channelService.updateChannelDirect(id, dto);
   }
 
+  @Delete(':id')
+  @UseGuards(AuthGuard, ChannelRolesGuard)
+  @Roles('OWNER')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteChannel(@Param('id') id: string) {
+    return this.channelService.delete(id);
+  }
+
   @Post(':id/join')
   @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.CREATED)

@@ -115,6 +115,24 @@ export class ChannelService {
     }
   }
 
+  async delete(channelId: string) {
+    const channel = await this.prisma.channel.findUnique({ where: { id: channelId } });
+    if (!channel) throw new NotFoundException('Channel not found');
+
+    await this.prisma.$transaction([
+      this.prisma.reaction.deleteMany({
+        where: {
+          targetType: 'MESSAGE',
+          targetId: { in: await this.prisma.message.findMany({ where: { channelId }, select: { id: true } }).then(msgs => msgs.map(m => m.id)) },
+        },
+      }),
+      this.prisma.message.deleteMany({ where: { channelId } }),
+      this.prisma.channelMember.deleteMany({ where: { channelId } }),
+      this.prisma.channel.delete({ where: { id: channelId } }),
+    ]);
+    await this.invalidateChannelsCache();
+  }
+
   private async invalidateChannelsCache() {
     const deletes = [...this.channelCacheKeys].map((key) => this.cache.del(key));
     await Promise.all(deletes);
