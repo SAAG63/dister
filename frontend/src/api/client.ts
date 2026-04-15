@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useAuthStore } from '../store/auth';
 
 const client = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -56,7 +56,7 @@ client.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const { data } = await axios.post('/api/auth/refresh', { refreshToken });
+        const { data } = await axios.post(`${import.meta.env.VITE_API_URL || '/api'}/auth/refresh`, { refreshToken });
         setTokens(data.token, data.refreshToken);
         processQueue(null, data.token);
         originalRequest.headers.Authorization = `Bearer ${data.token}`;
