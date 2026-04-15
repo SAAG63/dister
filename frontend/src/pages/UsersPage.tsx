@@ -16,7 +16,7 @@ export default function UsersPage() {
   const [users, setUsers] = useState<UserWithFollow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const fetchUsers = (query: string) => {
     setLoading(true);

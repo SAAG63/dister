@@ -58,7 +58,7 @@ export default function ChannelChatPage() {
   const [showInvite, setShowInvite] = useState(false);
   const [inviteSearch, setInviteSearch] = useState('');
   const [inviteResults, setInviteResults] = useState<{ id: string; username: string }[]>([]);
-  const inviteDebounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const inviteDebounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     if (!id) return;

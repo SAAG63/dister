@@ -3,19 +3,14 @@ import { Plus, X } from 'lucide-react';
 import ChannelList from '../components/ChannelList';
 import { getChannels, getMyChannels, createChannel } from '../api/channels';
 
-interface Channel {
-  id: string;
-  name: string;
-  description: string;
-  isPublic: boolean;
-  owner: { id: string; username: string };
-  memberCount: number;
-  createdAt: string;
+import type { Channel } from '../types';
+
+interface ChannelWithRole extends Channel {
   role?: string;
 }
 
 export default function ChannelsPage() {
-  const [channels, setChannels] = useState<Channel[]>([]);
+  const [channels, setChannels] = useState<ChannelWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState('');
@@ -25,8 +20,8 @@ export default function ChannelsPage() {
   useEffect(() => {
     Promise.all([getChannels(), getMyChannels()])
       .then(([publicRes, myChannels]) => {
-        const publicIds = new Set(publicRes.data.map((c: Channel) => c.id));
-        const privateChannels = myChannels.filter((c: Channel) => !publicIds.has(c.id));
+        const publicIds = new Set(publicRes.data.map((c: ChannelWithRole) => c.id));
+        const privateChannels = myChannels.filter((c: ChannelWithRole) => !publicIds.has(c.id));
         setChannels([...publicRes.data, ...privateChannels]);
       })
       .finally(() => setLoading(false));
