@@ -42,9 +42,13 @@ export default function PostCard({ post, compact, onDeleted }: PostCardProps) {
     <article className="group p-5 border-b-3 border-border hover:bg-surface-elevated/50 transition-colors duration-150">
       <div className="flex gap-3">
         <Link to={`/profile/${post.author.id}`} className="shrink-0">
-          <div className="w-10 h-10 rounded-full bg-accent border-2 border-border flex items-center justify-center text-sm font-bold text-border uppercase">
-            {post.author.username.charAt(0)}
-          </div>
+          {post.author.avatarUrl ? (
+            <img src={post.author.avatarUrl} alt="" className="w-10 h-10 rounded-full border-2 border-border object-cover" />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-accent border-2 border-border flex items-center justify-center text-sm font-bold text-border uppercase">
+              {post.author.username.charAt(0)}
+            </div>
+          )}
         </Link>
 
         <div className="flex-1 min-w-0">

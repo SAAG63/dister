@@ -38,9 +38,13 @@ export default function UserCard({ user, isFollowing: initialFollow = false, sho
   return (
     <div className="flex items-center gap-3 p-3 border-b-2 border-border-light hover:bg-surface-elevated/50 transition-colors">
       <Link to={`/profile/${user.id}`} className="shrink-0">
-        <div className="w-10 h-10 rounded-full bg-accent border-2 border-border flex items-center justify-center text-sm font-bold text-border uppercase">
-          {user.username.charAt(0)}
-        </div>
+        {user.avatarUrl ? (
+          <img src={user.avatarUrl} alt="" className="w-10 h-10 rounded-full border-2 border-border object-cover" />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-accent border-2 border-border flex items-center justify-center text-sm font-bold text-border uppercase">
+            {user.username.charAt(0)}
+          </div>
+        )}
       </Link>
       <div className="flex-1 min-w-0">
         <Link

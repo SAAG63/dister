@@ -46,11 +46,15 @@ export default function MessageList({ messages, channelId, userRole, onDeleted }
             key={msg.id}
             className={`group flex gap-3 items-end ${isOwn ? 'flex-row-reverse' : ''}`}
           >
-            <div className={`w-8 h-8 rounded-full border-2 border-border flex items-center justify-center text-xs font-bold uppercase shrink-0 ${
-              isOwn ? 'bg-accent' : 'bg-secondary text-white'
-            }`}>
-              {msg.author.username.charAt(0)}
-            </div>
+            {msg.author.avatarUrl ? (
+              <img src={msg.author.avatarUrl} alt="" className="w-8 h-8 rounded-full border-2 border-border object-cover shrink-0" />
+            ) : (
+              <div className={`w-8 h-8 rounded-full border-2 border-border flex items-center justify-center text-xs font-bold uppercase shrink-0 ${
+                isOwn ? 'bg-accent' : 'bg-secondary text-white'
+              }`}>
+                {msg.author.username.charAt(0)}
+              </div>
+            )}
             <div className={`max-w-[70%] ${isOwn ? 'text-right' : ''}`}>
               <div className={`text-[10px] font-bold mb-1 flex items-center gap-1 ${isOwn ? 'mr-1 justify-end' : 'ml-1'}`}>
                 {msg.author.username}
