@@ -18,6 +18,7 @@ import { FeedModule } from '../feed/feed.module';
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       playground: true,
+      introspection: true,
       sortSchema: true,
       csrfPrevention: false,
     }),
