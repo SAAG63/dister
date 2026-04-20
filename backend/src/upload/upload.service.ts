@@ -36,9 +36,15 @@ export class UploadService implements OnModuleInit {
 
   async getPresignedUploadUrl(userId: string): Promise<{ uploadUrl: string; avatarUrl: string }> {
     const objectName = `${userId}-${Date.now()}.jpg`;
-    const uploadUrl = await this.minio.presignedPutObject(BUCKET, objectName, 300); // 5 min expiry
+    let uploadUrl = await this.minio.presignedPutObject(BUCKET, objectName, 300); // 5 min expiry
 
-    const minioEndpoint = process.env.MINIO_PUBLIC_URL || 'http://localhost:9000';
+    const minioPublicUrl = process.env.MINIO_PUBLIC_URL;
+    if (minioPublicUrl) {
+      const original = new URL(uploadUrl);
+      uploadUrl = `${minioPublicUrl}${original.pathname}${original.search}`;
+    }
+
+    const minioEndpoint = minioPublicUrl || 'http://localhost:9000';
     const avatarUrl = `${minioEndpoint}/${BUCKET}/${objectName}`;
 
     return { uploadUrl, avatarUrl };
