@@ -19,6 +19,7 @@ import { FeedModule } from '../feed/feed.module';
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       playground: true,
       sortSchema: true,
+      csrfPrevention: false,
     }),
     UserModule,
     PostModule,
