@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Param, Req, Res, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
+import multer from 'multer';
 import { UploadService } from './upload.service';
 import { AuthGuard } from '../auth/auth.guard';
 
@@ -10,7 +11,7 @@ export class UploadController {
 
   @Post('avatar')
   @UseGuards(AuthGuard)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', { storage: multer.memoryStorage() }))
   async uploadAvatar(@Req() req: any, @UploadedFile() file: Express.Multer.File) {
     const objectName = await this.uploadService.uploadFile(req.user.id, file.buffer, file.mimetype);
     const avatarUrl = `/api/upload/avatars/${objectName}`;
