@@ -1,4 +1,6 @@
-import { Controller, Get, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Param, Req, Res, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
 import { UploadService } from './upload.service';
 import { AuthGuard } from '../auth/auth.guard';
 
@@ -6,9 +8,20 @@ import { AuthGuard } from '../auth/auth.guard';
 export class UploadController {
   constructor(private readonly uploadService: UploadService) {}
 
-  @Get('avatar-url')
+  @Post('avatar')
   @UseGuards(AuthGuard)
-  async getAvatarUploadUrl(@Req() req: any) {
-    return this.uploadService.getPresignedUploadUrl(req.user.id);
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadAvatar(@Req() req: any, @UploadedFile() file: Express.Multer.File) {
+    const objectName = await this.uploadService.uploadFile(req.user.id, file.buffer, file.mimetype);
+    const avatarUrl = `/api/upload/avatars/${objectName}`;
+    return { avatarUrl };
+  }
+
+  @Get('avatars/:name')
+  async getAvatar(@Param('name') name: string, @Res() res: Response) {
+    const { stream, contentType } = await this.uploadService.getFile(name);
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    stream.pipe(res);
   }
 }

@@ -38,17 +38,11 @@ export async function updateProfile(userId: string, data: { username?: string; e
   return res.data;
 }
 
-export async function getAvatarUploadUrl(): Promise<{ uploadUrl: string; avatarUrl: string }> {
-  const { data } = await client.get('/upload/avatar-url');
-  return data;
-}
-
 export async function uploadAvatar(file: File): Promise<string> {
-  const { uploadUrl, avatarUrl } = await getAvatarUploadUrl();
-  await fetch(uploadUrl, {
-    method: 'PUT',
-    body: file,
-    headers: { 'Content-Type': file.type },
+  const formData = new FormData();
+  formData.append('file', file);
+  const { data } = await client.post('/upload/avatar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
   });
-  return avatarUrl;
+  return data.avatarUrl;
 }

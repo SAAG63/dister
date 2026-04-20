@@ -1,5 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import * as Minio from 'minio';
+import { Readable } from 'stream';
 
 const BUCKET = 'avatars';
 
@@ -21,32 +22,19 @@ export class UploadService implements OnModuleInit {
     const exists = await this.minio.bucketExists(BUCKET);
     if (!exists) {
       await this.minio.makeBucket(BUCKET);
-      const policy = JSON.stringify({
-        Version: '2012-10-17',
-        Statement: [{
-          Effect: 'Allow',
-          Principal: { AWS: ['*'] },
-          Action: ['s3:GetObject'],
-          Resource: [`arn:aws:s3:::${BUCKET}/*`],
-        }],
-      });
-      await this.minio.setBucketPolicy(BUCKET, policy);
     }
   }
 
-  async getPresignedUploadUrl(userId: string): Promise<{ uploadUrl: string; avatarUrl: string }> {
-    const objectName = `${userId}-${Date.now()}.jpg`;
-    let uploadUrl = await this.minio.presignedPutObject(BUCKET, objectName, 300); // 5 min expiry
+  async uploadFile(userId: string, buffer: Buffer, mimetype: string): Promise<string> {
+    const ext = mimetype.split('/')[1] || 'jpg';
+    const objectName = `${userId}-${Date.now()}.${ext}`;
+    await this.minio.putObject(BUCKET, objectName, buffer, buffer.length, { 'Content-Type': mimetype });
+    return objectName;
+  }
 
-    const minioPublicUrl = process.env.MINIO_PUBLIC_URL;
-    if (minioPublicUrl) {
-      const original = new URL(uploadUrl);
-      uploadUrl = `${minioPublicUrl}${original.pathname}${original.search}`;
-    }
-
-    const minioEndpoint = minioPublicUrl || 'http://localhost:9000';
-    const avatarUrl = `${minioEndpoint}/${BUCKET}/${objectName}`;
-
-    return { uploadUrl, avatarUrl };
+  async getFile(objectName: string): Promise<{ stream: Readable; contentType: string }> {
+    const stream = await this.minio.getObject(BUCKET, objectName);
+    const stat = await this.minio.statObject(BUCKET, objectName);
+    return { stream, contentType: stat.metaData['content-type'] || 'image/jpeg' };
   }
 }
