@@ -14,7 +14,8 @@ export class UploadController {
   @UseInterceptors(FileInterceptor('file', { storage: multer.memoryStorage() }))
   async uploadAvatar(@Req() req: any, @UploadedFile() file: Express.Multer.File) {
     const objectName = await this.uploadService.uploadFile(req.user.id, file.buffer, file.mimetype);
-    const avatarUrl = `/api/upload/avatars/${objectName}`;
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const avatarUrl = `${baseUrl}/api/upload/avatars/${objectName}`;
     return { avatarUrl };
   }
 
